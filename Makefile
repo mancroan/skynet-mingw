@@ -21,8 +21,15 @@ TLS_INC=
 CFLAGS := -g -O2 -Wall -I$(PLATFORM_INC) -I$(LUA_INC) $(MYCFLAGS)
 # CFLAGS += -DUSE_PTHREAD_LOCK
 
+# Env arch bits check
+MACHINE_ARCH_INFO="`ls /mingw64/lib/gcc`"
+MACHINE_ARCH_IS_64BIT=$(if $(shell echo "${MACHINE_ARCH_INFO}" | grep '64'),TRUE,FALSE)
+
 # link
-LDFLAGS := -llua54 -lplatform -lpthread -lws2_32 -L$(SKYNET_BUILD_PATH)
+LDFLAGS := -llua54 -lplatform -lpthread -lws2_32 -lpsapi -L$(SKYNET_BUILD_PATH)
+ifeq ($(MACHINE_ARCH_IS_64BIT),TRUE)
+  LDFLAGS += -ldl -lpsapi
+endif
 SHARED := --shared
 EXPORT := -Wl,-E
 SHAREDLDFLAGS := -llua54 -lskynet -lplatform -lws2_32 -L$(SKYNET_BUILD_PATH)
@@ -55,7 +62,7 @@ SKYNET_EXE_SRC = skynet_main.c
 SKYNET_SRC = skynet_handle.c skynet_module.c skynet_mq.c \
   skynet_server.c skynet_start.c skynet_timer.c skynet_error.c \
   skynet_harbor.c skynet_env.c skynet_monitor.c skynet_socket.c socket_server.c \
-  malloc_hook.c skynet_daemon.c skynet_log.c
+  malloc_hook.c skynet_daemon.c skynet_log.c skynet_condition.c
 
 all : \
 	$(LUA_STATICLIB) \
@@ -72,7 +79,7 @@ $(SKYNET_BUILD_PATH)/skynet.dll : $(foreach v, $(SKYNET_SRC), skynet-src/$(v)) |
 	$(CC) -includeplatform.h $(CFLAGS) $(SHARED) -o $@ $^ -Iskynet-src $(LDFLAGS) $(SKYNET_LIBS) $(SKYNET_DEFINES)
 
 $(SKYNET_BUILD_PATH)/skynet.exe : $(foreach v, $(SKYNET_EXE_SRC), skynet-src/$(v))  | $(SKYNET_BUILD_PATH)/skynet.dll
-	$(CC) -includeplatform.h $(CFLAGS) -o $@ $^ -Iskynet-src $(EXPORT) $(LDFLAGS) $(SHAREDLDFLAGS) $(SKYNET_DEFINES)	
+	$(CC) -includeplatform.h $(CFLAGS) -o $@ $^ -Iskynet-src $(EXPORT) $(LDFLAGS) $(SHAREDLDFLAGS) $(SKYNET_DEFINES) 
 
 # lua
 $(LUA_STATICLIB) :
