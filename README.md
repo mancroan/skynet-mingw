@@ -1,4 +1,4 @@
-# 关于skynet-mingw [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
+# 关于skynet-mingw-w64 [![Build status](https://ci.appveyor.com/api/projects/status/9j45lldyxmfdau3r?svg=true)](https://ci.appveyor.com/project/dpull/skynet-mingw)
 
 [skynet-mingw](https://github.com/dpull/skynet-mingw) 是[skynet](https://github.com/cloudwu/skynet)的windows平台的实现。其主要特点是：
 
@@ -7,19 +7,21 @@
 1. 自动更新skynet，自动构建，自动化测试，确保质量。
 
 ## 编译
-不想自行编译的朋友可访问 [自动构建平台获取最新的构建版本](https://ci.appveyor.com/project/dpull/skynet-mingw/build/artifacts)。
-
-1. 安装 [MinGW](http://sourceforge.net/projects/mingw/files/)
-1. 安装 `gcc g++`
-1. 安装 `pthread (dev)`
-1. 运行 `MinGW\msys\1.0\msys.bat`
-1. 运行 `prepare.sh`
-1. 运行 `make`
+亲测在mingw-w64编译通过
+1.安装msys2,根据官方文档提示安装
+2.运行./prepare.sh
+3.make
 
 ### 常见问题
-1. 建议使用 `MinGW\msys\1.0\msys.bat` 进行编译
-1. 错误: `gcc: Command not found`, 解决: 修改 `msys\1.0\etc\fstab` 中的 `/mingw` 路径
-1. 当提示缺少类似`dlfcn.h`文件时，建议看看头文件搜索路径是否有问题，举个例子`perl(Strawberry Perl)`中有`gcc`程序，同时它注册了系统环境变量
+1. 当提示缺少类似`dlfcn.h`文件时，安装mingw-w64_x86_64-dlfcn, 当找不到函数的实现是注意makefile的MACHINE_ARCH_INFO="`ls /mingw64/lib/gcc`"路劲是否正确
+2. 当提示缺少`netdb.h`文件时, mingw-w64不提供某些头文件(坑爹)，只能修改原文件
+#ifdef _WIN32
+#include <winsock2.h>
+#include <windows.h> 
+#else
+#include <netdb.h>
+#endif
+
 
 ## 测试
 
@@ -29,8 +31,20 @@
 ```
 
 ## 已知问题
+1.错误，不知道原因，没解决
+ua:330: ./lualib/skynet\socket.lua:357: assertion failed!
+stack traceback:
+        [C]: in function 'assert'
+        ./lualib/skynet\socket.lua:357: in function 'skynet.socket.readline'
+        ./service/console.lua:16: in upvalue 'f'
+        ./lualib/skynet.lua:253: in function <./lualib/skynet.lua:252>
+stack traceback:
+        [C]: in function 'assert'
+        ./lualib/skynet.lua:858: in function 'skynet.dispatch_message'
 
-1. console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。
+
+
+2. console服务不可用(无法对stdin进行select)， 会提示如下出错信息，暂时没有解决方案。
 
 ```bash
 stack traceback:
@@ -41,7 +55,7 @@ stack traceback:
         ./lualib/skynet.lua:105: in function <./lualib/skynet.lua:104>
 ```
 
-2. 使用`skynet.abort`无法退出，看堆栈卡在了系统中，暂时没有解决方案。（替代方案`os.exit(true)`）
+3. 使用`skynet.abort`无法退出，看堆栈卡在了系统中，暂时没有解决方案。（替代方案`os.exit(true)`）
 
 ```bash
 #0  0x77bd718c in ntdll!ZwWaitForMultipleObjects () from C:\WINDOWS\SYSTEM32\ntdll.dll
